@@ -23,13 +23,15 @@ impl Nfa{
         }
     }
 
-    fn state(&mut self, s:usize, i:char, to:Vec<u32>) {
+    fn state(&mut self, s:usize, i:Option<char>, to:Vec<u32>) {
 
         for _ in self.states.len()..=s {
             self.states.push( HashMap::new() );
         }
 
-        self.states[s] = HashMap::from( [(i, to)] )
+        let cc = i.unwrap_or('\u{025B}');
+
+        self.states[s] = HashMap::from( [(cc, to)] )
 
     }
 
@@ -69,15 +71,15 @@ fn main() {
     let mut nfa = Nfa::new();
 
     // a(a|b)*
-    nfa.state(0, 'a', vec![1]);
-    nfa.state(1, 'e', vec![2]);
-    nfa.state(2, 'e', vec![3,9]);
-    nfa.state(3, 'e', vec![4,6]);
-    nfa.state(4, 'a', vec![5]);
-    nfa.state(5, 'e', vec![8]);
-    nfa.state(6, 'b', vec![7]);
-    nfa.state(7, 'a', vec![8]);
-    nfa.state(8, 'e', vec![3,9]);
+    nfa.state(0, Some('a'), vec![1]);
+    nfa.state(1, None, vec![2]);
+    nfa.state(2, None, vec![3,9]);
+    nfa.state(3, None, vec![4,6]);
+    nfa.state(4, Some('a'), vec![5]);
+    nfa.state(5, None, vec![8]);
+    nfa.state(6, Some('b'), vec![7]);
+    nfa.state(7, Some('a'), vec![8]);
+    nfa.state(8, None, vec![3,9]);
 
     nfa.finals(vec![9]);
     nfa.start(0);
