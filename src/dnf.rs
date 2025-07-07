@@ -66,7 +66,7 @@ impl Nfa{
 }
 
 
-fn main() {
+fn test() {
 
     let mut nfa = Nfa::new();
 
