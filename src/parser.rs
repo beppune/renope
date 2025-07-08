@@ -5,32 +5,29 @@
 // repeat  ::= atom ('*' | '+' | '?')?
 // atom    ::= literal | '.' | '(' regex ')'
 
+#[derive(Debug,PartialEq)]
 enum Ast {
     Empty,
     Literal(char),
     Concat(Box<Ast>, Box<Ast>),
     Alt(Box<Ast>, Box<Ast>),
-    Star(Box<Ast>),
 }
 
-type Result = std::result::Result<Ast, &'static str>;
+type ResultAst = std::result::Result<Ast, &'static str>;
 
-fn parse_alt(input: &mut std::iter::Peekable<std::str::Chars<>>) -> Result {
+type PeekChars<'a> = std::iter::Peekable<std::str::Chars<'a>>;
 
+fn parse_literal(input: &mut PeekChars) -> ResultAst {
 
-    let mut p = input.peek();
-    let ast = match p {
-        Some(c) => match c {
-            c if c.is_alphabetic() => {
+    let p = input.peek();
 
-            }
-        },
-        _ =>  Ast::Empty
-    };
+    match p {
+        Some(c) if c.is_alphabetic() => Ok(Ast::Literal(*c)),
+        None => Ok(Ast::Empty),
+        _ => Err("literal expected"),
+    }
 
-    Ok(ast)
 }
-
 
 #[cfg(test)]
 mod test {
@@ -38,7 +35,13 @@ mod test {
 
     #[test]
     fn test_this() {
-        let input = "ab";
-        assert_eq!(true, true);
+        let res = parse_literal(&mut "a".chars().peekable());
+        assert_eq!(res.unwrap(), Ast::Literal('a') );
+
+        let empty = parse_literal(&mut "".chars().peekable());
+        assert_eq!(empty.unwrap(), Ast::Empty );
+
+        let error = parse_literal(&mut "!".chars().peekable());
+        assert_eq!(error, Err("literal expected") );
     }
 }
