@@ -19,13 +19,18 @@ type PeekChars<'a> = std::iter::Peekable<std::str::Chars<'a>>;
 
 fn parse_literal(input: &mut PeekChars) -> ResultAst {
 
-    let p = input.peek();
+    let p = input.next();
 
     match p {
-        Some(c) if c.is_alphabetic() => Ok(Ast::Literal(*c)),
+        Some(c) if c.is_alphabetic() => Ok(Ast::Literal(c)),
         None => Ok(Ast::Empty),
         _ => Err("literal expected"),
     }
+
+}
+
+fn parse_concat(input: &mut PeekChars) -> ResultAst {
+    
 
 }
 
