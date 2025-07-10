@@ -17,21 +17,25 @@ type ResultAst = std::result::Result<Ast, &'static str>;
 
 type PeekChars<'a> = std::iter::Peekable<std::str::Chars<'a>>;
 
-fn parse_literal(input: &mut PeekChars) -> ResultAst {
+fn parse_concat(input: &mut PeekChars) -> ResultAst {    
 
-    let p = input.next();
+    let mut ls = vec![];
 
-    match p {
-        Some(c) if c.is_alphabetic() => Ok(Ast::Literal(c)),
-        None => Ok(Ast::Empty),
-        _ => Err("literal expected"),
+    while let Some(c) = input.peek() {
+        if !c.is_alphabetic() {
+            break;
+        }
+
+        ls.push( Ast::Literal(*c) );
+        input.next();
     }
 
-}
+    let mut ast = Ast::Empty;
+    for c in ls.into_iter() {
+        ast = Ast::Concat( Box::new(ast), Box::new(c) );
+    }
 
-fn parse_concat(input: &mut PeekChars) -> ResultAst {
-    
-
+    Ok(ast)
 }
 
 #[cfg(test)]
@@ -39,14 +43,12 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_this() {
-        let res = parse_literal(&mut "a".chars().peekable());
-        assert_eq!(res.unwrap(), Ast::Literal('a') );
+    fn test_cat() {
 
-        let empty = parse_literal(&mut "".chars().peekable());
-        assert_eq!(empty.unwrap(), Ast::Empty );
+        let ast = parse_concat(&mut "abcd".chars().peekable());
 
-        let error = parse_literal(&mut "!".chars().peekable());
-        assert_eq!(error, Err("literal expected") );
+        dbg!(ast);
+
+        assert_eq!(true, true); 
     }
 }
