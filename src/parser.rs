@@ -17,6 +17,10 @@ type ResultAst = std::result::Result<Ast, &'static str>;
 
 type PeekChars<'a> = std::iter::Peekable<std::str::Chars<'a>>;
 
+fn parse_repeat(input: &mut PeekChars) -> ResultAst {
+    let mut ast = input.next();
+}
+
 fn parse_concat(input: &mut PeekChars) -> ResultAst {    
 
     let mut ls = vec![];
