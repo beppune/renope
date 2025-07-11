@@ -30,9 +30,10 @@ fn parse_concat(input: &mut PeekChars) -> ResultAst {
         input.next();
     }
 
-    let mut ast = Ast::Empty;
-    for c in ls.into_iter() {
-        ast = Ast::Concat( Box::new(ast), Box::new(c) );
+    let mut iter = ls.into_iter();
+    let mut ast = iter.next().unwrap_or(Ast::Empty);
+    for c in iter {
+        ast = Ast::Concat( Box::new(c), Box::new(ast) );
     }
 
     Ok(ast)
