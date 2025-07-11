@@ -33,10 +33,26 @@ fn parse_concat(input: &mut PeekChars) -> ResultAst {
     let mut iter = ls.into_iter();
     let mut ast = iter.next().unwrap_or(Ast::Empty);
     for c in iter {
-        ast = Ast::Concat( Box::new(c), Box::new(ast) );
+        ast = Ast::Concat( Box::new(ast), Box::new(c) );
     }
 
     Ok(ast)
+}
+
+fn parse_alt(input: &mut PeekChars) -> ResultAst {
+
+    let mut ast = parse_concat(input)?;
+
+    while input.peek() == Some(&'|') {
+        input.next();
+        ast = Ast::Alt( Box::new(ast), Box::new(parse_concat(input)?) );
+    }
+
+    Ok( ast )
+}
+
+fn regex_compile(s:&str) -> ResultAst {
+    parse_alt(&mut s.chars().peekable())    
 }
 
 #[cfg(test)]
@@ -46,10 +62,16 @@ mod test {
     #[test]
     fn test_cat() {
 
-        let ast = parse_concat(&mut "abcd".chars().peekable());
-
+        let mut ast = regex_compile("");
         dbg!(ast);
 
-        assert_eq!(true, true); 
+        let mut ast = regex_compile("ab");
+        dbg!(ast);
+
+        let mut ast = regex_compile("ab|cd|ef|gh");
+        dbg!(ast);
+
     }
+    
+
 }
