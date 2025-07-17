@@ -70,21 +70,12 @@ fn parse_concat(input: &mut Input) -> Option<Ast> {
     while let Some(tsa) = it.next() {
         ast = Concat( Box::new(ast), Box::new(tsa) );
     }
-    // dbg!(&ast);
-    //
-    // let mut n = it.next()?;
-    // dbg!(&n);
-    //
-    // n = it.next()?;
-    // dbg!(&n);
-    //
-    // n = it.next()?;
-    // dbg!(&n);
-    //
-    // n = it.next()?;
-    // dbg!(&n);
-    //
+
     Some(ast)
+}
+
+fn parse_alt(input: &mut Input) -> Option<Ast> {
+    None
 }
 
 #[cfg(test)]
