@@ -11,52 +11,50 @@ enum Ast {
     Literal(char),
     Concat(Box<Ast>, Box<Ast>),
     Alt(Box<Ast>, Box<Ast>),
+    Star(Box<Ast>),
+    Plus(Box<Ast>),
+    Optional(Box<Ast>),
 }
 
-type ResultAst = std::result::Result<Ast, &'static str>;
+type AstRes = Result<Ast,&'static str>;
 
-type PeekChars<'a> = std::iter::Peekable<std::str::Chars<'a>>;
-
-fn parse_repeat(input: &mut PeekChars) -> ResultAst {
-    let mut ast = input.next();
-}
-
-fn parse_concat(input: &mut PeekChars) -> ResultAst {    
-
-    let mut ls = vec![];
-
-    while let Some(c) = input.peek() {
-        if !c.is_alphabetic() {
-            break;
+impl Ast {
+    fn repeat(r:char, ast:Self) -> AstRes {
+        match r {
+            '*' => Ok( Star(Box::new(ast)) ),
+            '+' => Ok( Plus(Box::new(ast)) ),
+            '?' => Ok( Optional(Box::new(ast)) ),
+            _ => Err("Expected one of repeat operators: *, +, ?"),
         }
-
-        ls.push( Ast::Literal(*c) );
-        input.next();
     }
-
-    let mut iter = ls.into_iter();
-    let mut ast = iter.next().unwrap_or(Ast::Empty);
-    for c in iter {
-        ast = Ast::Concat( Box::new(ast), Box::new(c) );
-    }
-
-    Ok(ast)
 }
 
-fn parse_alt(input: &mut PeekChars) -> ResultAst {
+use self::Ast::*;
 
-    let mut ast = parse_concat(input)?;
+type Input<'a> = std::iter::Peekable<std::str::Chars<'a>>;
 
-    while input.peek() == Some(&'|') {
-        input.next();
-        ast = Ast::Alt( Box::new(ast), Box::new(parse_concat(input)?) );
+fn parse_repeat(input: &mut Input) -> Option<Ast> {
+    let c:char = input.next()?;
+
+    let ast:Ast;
+
+    let repeat = input.peek();
+    match repeat {
+        None => ast = Literal(c),
+        Some(&r) => {
+            ast = match r {
+                '*' | '+' | '?' => {
+                    let _ = input.next();
+                    Ast::repeat(r, Literal(c))
+                        .expect("PARSE_REPEAT: expected one of the repeat chars: *,+,?")
+                }
+                _ => Literal(c),
+            };
+        },
     }
 
-    Ok( ast )
-}
-
-fn regex_compile(s:&str) -> ResultAst {
-    parse_alt(&mut s.chars().peekable())    
+    Some(ast)
+    
 }
 
 #[cfg(test)]
@@ -64,18 +62,23 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_cat() {
+    fn test_char() {
+        let s =  "ab+c*d?"; 
+        println!("{s}");
 
-        let mut ast = regex_compile("");
+        let mut it = s.chars().peekable();
+        
+        let mut ast = parse_repeat(&mut it);
         dbg!(ast);
 
-        let mut ast = regex_compile("ab");
+        ast = parse_repeat(&mut it);
         dbg!(ast);
 
-        let mut ast = regex_compile("ab|cd|ef|gh");
+        ast = parse_repeat(&mut it);
         dbg!(ast);
 
+        ast = parse_repeat(&mut it);
+        dbg!(ast);
     }
-    
 
 }
