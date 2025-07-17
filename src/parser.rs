@@ -54,7 +54,37 @@ fn parse_repeat(input: &mut Input) -> Option<Ast> {
     }
 
     Some(ast)
-    
+
+}
+
+fn parse_concat(input: &mut Input) -> Option<Ast> {
+
+    let mut repeat = vec![];
+
+    while let Some(ast) = parse_repeat(input) {
+        repeat.push( ast);
+    }
+
+    let mut it = repeat.into_iter();
+    let mut ast:Ast = it.next()?;
+    while let Some(tsa) = it.next() {
+        ast = Concat( Box::new(ast), Box::new(tsa) );
+    }
+    // dbg!(&ast);
+    //
+    // let mut n = it.next()?;
+    // dbg!(&n);
+    //
+    // n = it.next()?;
+    // dbg!(&n);
+    //
+    // n = it.next()?;
+    // dbg!(&n);
+    //
+    // n = it.next()?;
+    // dbg!(&n);
+    //
+    Some(ast)
 }
 
 #[cfg(test)]
@@ -62,12 +92,24 @@ mod test {
     use super::*;
 
     #[test]
+    fn tes_concat() {
+        let s =  "ab+c*d?"; 
+        println!("{s}");
+
+        let mut it = s.chars().peekable();
+
+        let ast = parse_concat(&mut it);
+        dbg!(ast);
+    }
+
+    #[test]
+    #[ignore]
     fn test_char() {
         let s =  "ab+c*d?"; 
         println!("{s}");
 
         let mut it = s.chars().peekable();
-        
+
         let mut ast = parse_repeat(&mut it);
         dbg!(ast);
 
