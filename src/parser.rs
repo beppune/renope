@@ -33,6 +33,9 @@ use self::Ast::*;
 
 type Input<'a> = std::iter::Peekable<std::str::Chars<'a>>;
 
+fn parse_atom(input: &mut Input) -> Option<Ast> {
+}
+
 fn parse_repeat(input: &mut Input) -> Option<Ast> {
     let c:char = input.next()?;
 
