@@ -7,13 +7,13 @@
 
 #[derive(Debug,PartialEq)]
 enum Ast {
-    Empty,
     Literal(char),
     Concat(Box<Ast>, Box<Ast>),
     Alt(Box<Ast>, Box<Ast>),
     Star(Box<Ast>),
     Plus(Box<Ast>),
     Optional(Box<Ast>),
+    Stop(&'static str),
 }
 
 type AstRes = Result<Ast,&'static str>;
@@ -33,42 +33,44 @@ use self::Ast::*;
 
 type Input<'a> = std::iter::Peekable<std::str::Chars<'a>>;
 
+// An atom is a Literal o a quantified Literal
 fn parse_atom(input: &mut Input) -> Option<Ast> {
-}
 
-fn parse_repeat(input: &mut Input) -> Option<Ast> {
+    let is_quantifier = |x:char| {
+        return x == '*' || x == '+' || x == '?';
+    };
+
+    let is_atom = |x:char| {
+        return x.is_alphabetic();
+    };
+
     let c:char = input.next()?;
-
-    if !c.is_alphabetic() {
-        return None;
-    }
 
     let ast:Ast;
 
-    let repeat = input.peek();
-    match repeat {
-        None => ast = Literal(c),
-        Some(&r) => {
-            ast = match r {
-                '*' | '+' | '?' => {
-                    let _ = input.next();
-                    Ast::repeat(r, Literal(c))
-                        .expect("PARSE_REPEAT: expected one of the repeat chars: *,+,?")
-                },
-                _ => Literal(c),
-            };
-        },
+    if !is_atom(c) {
+        ast =  Stop("Expected atom");
+        return Some(ast);
     }
 
-    Some(ast)
+    let p = input.peek();
 
+    if let Some(&r) = p {
+        if is_quantifier(r) {
+            ast = Ast::repeat(r, Literal(c)).unwrap();
+            return Some(ast);
+        }
+    }
+
+    ast = Literal(c);
+    Some(ast)
 }
 
 fn parse_concat(input: &mut Input) -> Option<Ast> {
 
     let mut repeat = vec![];
 
-    while let Some(ast) = parse_repeat(input) {
+    while let Some(ast) = parse_atom(input) {
         repeat.push( ast);
     }
 
@@ -110,44 +112,15 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_alt() {
-        let s = "ac+s|b*|ef";
-        let ast = parse_alt(&mut s.chars().peekable());
+    fn test_atom() {
+        let mut it = "a?=".chars().peekable();
 
-        dbg!(ast);
-    }
+        let mut ast = parse_atom(&mut it);
+        assert_eq!(Some(Ast::Optional(Box::new(Ast::Literal('a')))), ast); 
 
-    #[test]
-    #[ignore]
-    fn tes_concat() {
-        let s =  "ab+c*d?"; 
-        println!("{s}");
+        ast = parse_atom(&mut it);
+        assert_eq!(Some(Ast::Stop("Expected atom")), ast); 
 
-        let mut it = s.chars().peekable();
-
-        let ast = parse_concat(&mut it);
-        dbg!(ast);
-    }
-
-    #[test]
-    #[ignore]
-    fn test_char() {
-        let s =  "ab+c*d?"; 
-        println!("{s}");
-
-        let mut it = s.chars().peekable();
-
-        let mut ast = parse_repeat(&mut it);
-        dbg!(ast);
-
-        ast = parse_repeat(&mut it);
-        dbg!(ast);
-
-        ast = parse_repeat(&mut it);
-        dbg!(ast);
-
-        ast = parse_repeat(&mut it);
-        dbg!(ast);
     }
 
 }
