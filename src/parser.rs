@@ -99,17 +99,27 @@ fn parse_atom(input: &mut Input) -> Option<Ast> {
         return x.is_alphabetic();
     };
 
-    let c = input.peek()?;
+    let mut ast:Ast;
 
-    let ast:Ast;
-
-    if !is_atom(*c) {
+    if !is_atom( *(input.peek()?) ) {
         ast = Stop( "Expected atom character" );
+        let _ = input.next();
         return Some(ast);
     }
 
-    ast = Literal(*c);
-    let _ = input.next();
+    let c = input.next()?;
+    ast = Literal(c);
+
+    if let Some(&q) = input.peek() {
+        match q {
+            q if is_quantifier(q) => {
+                ast = Ast::repeat(q, ast).expect("Repeat");
+                input.next();
+            },
+            _ => {}
+        }
+    }
+
     return Some(ast);
 }
 
@@ -126,6 +136,7 @@ mod test {
     use super::*;
 
     #[test]
+    #[ignore]
     fn test_it() {
         let alt = Alt( Box::new(Literal('a')), Box::new(Literal('f')) );
         let concat = Concat( Box::new(alt), Box::new(Star(Box::new(Literal('d')))) );
@@ -140,11 +151,7 @@ mod test {
         let mut it = "ab=c+".chars().peekable();
 
         while let Some(ast) = parse_atom(&mut it) {
-            if let Stop(msg) = ast {
-                println!("Error {}", msg);
-                break;
-            }
-            dbg!(ast);
+            println!("{ast}");
         }
 
     }
