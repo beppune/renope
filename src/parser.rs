@@ -4,6 +4,7 @@
 // concat  ::= repeat+
 // repeat  ::= atom ('*' | '+' | '?')?
 // atom    ::= literal | '.' | '(' regex ')'
+use std::fmt::Display;
 
 #[derive(Debug,PartialEq)]
 enum Ast {
@@ -70,14 +71,15 @@ impl Ast {
 }
 
 impl Display for Ast {
-   fn fmt(&self, f: &mut fmt::Formatter<'_'>) -> fmt::Result {
+   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
        match &self {
-        Literal(c) | Stop(c) => write!(f, "{}", c),
-        Concat(ast, tsa) | Alt(ast,tsa) => write!(f, "{}{}", Display::fmt(ast,f), Display::fmt(tsa,f)),
-
-        Star(ast) => write!("{}*", Display::fmt(ast,f)),
-        Plus(ast) => write!("{}+", Display::fmt(ast,f)),
-        Optional(ast) => write!("{}?", Display::fmt(ast,f)),
+        Literal(c) => write!(f, "{c}"),
+        Concat(ast, tsa) => write!(f, "{}{}", **ast, **tsa),
+        Alt(ast, tsa) => write!(f, "{}|{}", **ast, **tsa),
+        Star(ast) => write!(f, "{}*", **ast),
+        Plus(ast) => write!(f, "{}+", **ast),
+        Optional(ast) => write!(f, "{}?", **ast),
+        Stop(e) => write!(f, "<{e}>"),
     }
    }
 }
@@ -125,13 +127,10 @@ mod test {
 
     #[test]
     fn test_it() {
-        let ast = Concat( Box::new( 
-                Concat( Box::new(Literal('8')), Box::new(Literal('r') ) )
-        ), Box::new( Literal('d' ) ) );
+        let alt = Alt( Box::new(Literal('a')), Box::new(Literal('f')) );
+        let concat = Concat( Box::new(alt), Box::new(Star(Box::new(Literal('d')))) );
 
-        for a in ast.preorder_iter() {
-            dbg!(&a);
-        }
+        println!("{}", concat);
 
     }
 
