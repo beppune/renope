@@ -124,7 +124,23 @@ fn parse_atom(input: &mut Input) -> Option<Ast> {
 }
 
 fn parse_concat(input: &mut Input) -> Option<Ast> {
-    None
+    let mut atoms = vec![];
+
+    while let Some(ast) = parse_atom(input) {
+        if let Stop(_) = ast {
+            break;
+        }
+
+        atoms.push( ast );
+    }
+
+    let mut it = atoms.into_iter();
+    let mut ast = it.next()?;
+    for tsa in it {
+        ast = Concat( Box::new(ast), Box::new(tsa) );
+    }
+
+    Some(ast)
 }
 
 fn parse_alt(input: &mut Input) -> Option<Ast> {
@@ -134,6 +150,14 @@ fn parse_alt(input: &mut Input) -> Option<Ast> {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    #[test]
+    fn test_concat() {
+        let mut it = "a+b=c?d".chars().peekable();
+
+        let ast = parse_concat(&mut it).expect("Error");
+        println!("{}", ast);
+    }
 
     #[test]
     #[ignore]
