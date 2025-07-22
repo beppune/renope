@@ -144,7 +144,7 @@ fn parse_concat(input: &mut Input) -> Option<Ast> {
 }
 
 fn parse_alt(input: &mut Input) -> Option<Ast> {
-    None
+
 }
 
 #[cfg(test)]
@@ -153,7 +153,7 @@ mod test {
 
     #[test]
     fn test_concat() {
-        let mut it = "a+b=c?d".chars().peekable();
+        let mut it = "a+bc?d".chars().peekable();
 
         let ast = parse_concat(&mut it).expect("Error");
         println!("{}", ast);
@@ -172,7 +172,7 @@ mod test {
     #[test]
     #[ignore]
     fn test_atom() {
-        let mut it = "ab=c+".chars().peekable();
+        let mut it = "abc+".chars().peekable();
 
         while let Some(ast) = parse_atom(&mut it) {
             println!("{ast}");
