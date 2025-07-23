@@ -122,12 +122,18 @@ fn parse_atom(input: &mut Input) -> Option<Ast> {
 }
 
 fn parse_concat(input: &mut Input) -> Option<Ast> {
+    let is_atom = |x:char| {
+        return x.is_alphabetic();
+    };
+
     let mut atoms = vec![];
 
     while let Some(ast) = parse_atom(input) {
+        dbg!(&ast);
         if let Some(&f) = input.peek() {
             if !is_atom(f) {
                 atoms.push( Stop("atom") );
+                break;
             }
         }
         atoms.push( ast );
@@ -149,6 +155,17 @@ fn parse_alt(input: &mut Input) -> Option<Ast> {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    #[test]
+    fn test_concat() {
+        let mut it = "abc=".chars().peekable();
+
+        let some = parse_concat(&mut it);
+
+        if let Some(ast) = some {
+            println!("{ast}");
+        }
+    }
 
     #[test]
     #[ignore]
