@@ -102,9 +102,7 @@ fn parse_atom(input: &mut Input) -> Option<Ast> {
     let mut ast:Ast;
 
     if !is_atom( *(input.peek()?) ) {
-        ast = Stop( "Expected atom character" );
-        let _ = input.next();
-        return Some(ast);
+        return None;
     }
 
     let c = input.next()?;
@@ -127,16 +125,17 @@ fn parse_concat(input: &mut Input) -> Option<Ast> {
     let mut atoms = vec![];
 
     while let Some(ast) = parse_atom(input) {
-        if let Stop(_) = ast {
-            break;
+        if let Some(&f) = input.peek() {
+            if !is_atom(f) {
+                atoms.push( Stop("atom") );
+            }
         }
-
         atoms.push( ast );
     }
 
     let mut it = atoms.into_iter();
     let mut ast = it.next()?;
-    for tsa in it {
+    while let Some(tsa) = it.next() {
         ast = Concat( Box::new(ast), Box::new(tsa) );
     }
 
@@ -144,7 +143,7 @@ fn parse_concat(input: &mut Input) -> Option<Ast> {
 }
 
 fn parse_alt(input: &mut Input) -> Option<Ast> {
-
+    None
 }
 
 #[cfg(test)]
@@ -152,32 +151,39 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_concat() {
-        let mut it = "a+bc?d".chars().peekable();
-
-        let ast = parse_concat(&mut it).expect("Error");
-        println!("{}", ast);
-    }
-
-    #[test]
     #[ignore]
     fn test_it() {
         let alt = Alt( Box::new(Literal('a')), Box::new(Literal('f')) );
         let concat = Concat( Box::new(alt), Box::new(Star(Box::new(Literal('d')))) );
 
-        println!("{}", concat);
+        println!("{concat}");
 
     }
 
     #[test]
     #[ignore]
     fn test_atom() {
-        let mut it = "abc+".chars().peekable();
+        let mut it = "abc+=fg+".chars().peekable();
 
-        while let Some(ast) = parse_atom(&mut it) {
+        let mut atom = parse_atom(&mut it);
+        if let Some(ast) = atom {
             println!("{ast}");
         }
 
+        atom = parse_atom(&mut it);
+        if let Some(ast) = atom {
+            println!("{ast}");
+        }
+
+        atom = parse_atom(&mut it);
+        if let Some(ast) = atom {
+            println!("{ast}");
+        }
+
+        atom = parse_atom(&mut it);
+        if let Some(ast) = atom {
+            println!("{ast}");
+        }
     }
 
 }
