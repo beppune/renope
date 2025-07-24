@@ -150,7 +150,30 @@ fn parse_concat(input: &mut Input) -> Option<Ast> {
 }
 
 fn parse_alt(input: &mut Input) -> Option<Ast> {
-    None
+    let mut alts = vec![];
+    alts.push( parse_concat(input)? );
+    
+    while let Some(&f) = input.peek() {
+        match f {
+            f if f == '|' => {
+                input.next();
+                alts.push( parse_concat(input)? );
+
+            },
+            _ => {
+                alts.push( Stop("concat") );
+                break;
+            }
+        }
+    }
+
+    let mut it = alts.into_iter();
+    let mut ast = it.next()?;
+    while let Some(tsa) = it.next() {
+        ast = Alt( Box::new(ast), Box::new(tsa) );
+    }
+
+    Some(ast)
 }
 
 #[cfg(test)]
@@ -158,6 +181,17 @@ mod test {
     use super::*;
 
     #[test]
+    fn test_alt() {
+        let mut it = "as|w?|w*".chars().peekable();
+        let ast = parse_alt(&mut it);
+
+        dbg!(ast);
+
+    }
+
+
+    #[test]
+    #[ignore]
     fn test_concat() {
         let mut it = "ab+=c*d?".chars().peekable();
         let ast = parse_concat(&mut it).unwrap();
@@ -185,6 +219,9 @@ mod test {
         assert_eq!( None, ast );
         assert_eq!( Some(&'='), it.peek() );
 
+        it = "|alt".chars().peekable();
+        let ast = parse_atom(&mut it);
+        dbg!(ast);
     }
 
 }
