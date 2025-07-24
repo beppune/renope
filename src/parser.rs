@@ -128,15 +128,16 @@ fn parse_concat(input: &mut Input) -> Option<Ast> {
 
     let mut atoms = vec![];
 
-    while let Some(ast) = parse_atom(input) {
-        dbg!(&ast);
-        if let Some(&f) = input.peek() {
-            if !is_atom(f) {
+    while let Some(&p) = input.peek() {
+        match p {
+            p if is_atom(p) => {
+                atoms.push( parse_atom(input)? );
+            },
+            _ => {
                 atoms.push( Stop("atom") );
                 break;
             }
         }
-        atoms.push( ast );
     }
 
     let mut it = atoms.into_iter();
@@ -158,49 +159,32 @@ mod test {
 
     #[test]
     fn test_concat() {
-        let mut it = "abc=".chars().peekable();
-
-        let some = parse_concat(&mut it);
-
-        if let Some(ast) = some {
-            println!("{ast}");
-        }
-    }
-
-    #[test]
-    #[ignore]
-    fn test_it() {
-        let alt = Alt( Box::new(Literal('a')), Box::new(Literal('f')) );
-        let concat = Concat( Box::new(alt), Box::new(Star(Box::new(Literal('d')))) );
-
-        println!("{concat}");
-
+        let mut it = "ab+=c*d?".chars().peekable();
+        let ast = parse_concat(&mut it).unwrap();
+        println!("\n### {ast} ###");
+        dbg!(ast);
     }
 
     #[test]
     #[ignore]
     fn test_atom() {
-        let mut it = "abc+=fg+".chars().peekable();
+        let mut it = "".chars().peekable();
+        let ast = parse_atom(&mut it);
+        assert_eq!(None, ast);
 
-        let mut atom = parse_atom(&mut it);
-        if let Some(ast) = atom {
-            println!("{ast}");
-        }
+        let mut it = "ab+".chars().peekable();
+        let ast = parse_atom(&mut it);
+        assert_eq!( Some(Literal('a')), ast );
+        let ast = parse_atom(&mut it);
+        assert_eq!( Some(Plus(Box::new(Literal('b')))), ast);
+        let ast = parse_atom(&mut it);
+        assert_eq!( None, ast);
 
-        atom = parse_atom(&mut it);
-        if let Some(ast) = atom {
-            println!("{ast}");
-        }
+        it = "=?".chars().peekable();
+        let ast = parse_atom(&mut it);
+        assert_eq!( None, ast );
+        assert_eq!( Some(&'='), it.peek() );
 
-        atom = parse_atom(&mut it);
-        if let Some(ast) = atom {
-            println!("{ast}");
-        }
-
-        atom = parse_atom(&mut it);
-        if let Some(ast) = atom {
-            println!("{ast}");
-        }
     }
 
 }
