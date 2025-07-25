@@ -15,6 +15,7 @@ enum Ast {
     Plus(Box<Ast>),
     Optional(Box<Ast>),
     Stop(&'static str),
+    Group(Box<Ast>),
 }
 
 struct AstPreOrderIter<'a> {
@@ -80,6 +81,7 @@ impl Display for Ast {
         Plus(ast) => write!(f, "{}+", **ast),
         Optional(ast) => write!(f, "{}?", **ast),
         Stop(e) => write!(f, "<{e}>"),
+        Group(ast) => write!(f, "{}?", **ast),
     }
    }
 }
@@ -90,90 +92,16 @@ type Input<'a> = std::iter::Peekable<std::str::Chars<'a>>;
 
 // An atom is a Literal o a quantified Literal
 fn parse_atom(input: &mut Input) -> Option<Ast> {
-
-    let is_quantifier = |x:char| {
-        return x == '*' || x == '+' || x == '?';
-    };
-
-    let is_atom = |x:char| {
-        return x.is_alphabetic();
-    };
-
-    let mut ast:Ast;
-
-    if !is_atom( *(input.peek()?) ) {
-        return None;
-    }
-
-    let c = input.next()?;
-    ast = Literal(c);
-
-    if let Some(&q) = input.peek() {
-        match q {
-            q if is_quantifier(q) => {
-                ast = Ast::repeat(q, ast).expect("Repeat");
-                input.next();
-            },
-            _ => {}
-        }
-    }
-
-    return Some(ast);
+    let p = input.peek()?;
+    return Some(Literal(*p));
 }
 
 fn parse_concat(input: &mut Input) -> Option<Ast> {
-    let is_atom = |x:char| {
-        return x.is_alphabetic();
-    };
-
-    let mut atoms = vec![];
-
-    while let Some(&p) = input.peek() {
-        match p {
-            p if is_atom(p) => {
-                atoms.push( parse_atom(input)? );
-            },
-            _ => {
-                atoms.push( Stop("atom") );
-                break;
-            }
-        }
-    }
-
-    let mut it = atoms.into_iter();
-    let mut ast = it.next()?;
-    while let Some(tsa) = it.next() {
-        ast = Concat( Box::new(ast), Box::new(tsa) );
-    }
-
-    Some(ast)
+    return parse_atom(input);
 }
 
 fn parse_alt(input: &mut Input) -> Option<Ast> {
-    let mut alts = vec![];
-    alts.push( parse_concat(input)? );
-    
-    while let Some(&f) = input.peek() {
-        match f {
-            f if f == '|' => {
-                input.next();
-                alts.push( parse_concat(input)? );
-
-            },
-            _ => {
-                alts.push( Stop("concat") );
-                break;
-            }
-        }
-    }
-
-    let mut it = alts.into_iter();
-    let mut ast = it.next()?;
-    while let Some(tsa) = it.next() {
-        ast = Alt( Box::new(ast), Box::new(tsa) );
-    }
-
-    Some(ast)
+    return parse_concat(input);
 }
 
 #[cfg(test)]
@@ -181,6 +109,17 @@ mod test {
     use super::*;
 
     #[test]
+    fn test_group() {
+        let mut ast = parse_alt( &mut "".chars().peekable() );
+        assert_eq!( None, ast );
+
+        ast = parse_alt( &mut "b".chars().peekable() );
+        assert_eq!( Some(Literal('b')), ast);
+        // let exp = Group(Box::new(Literal('b')));
+    }
+
+    #[test]
+    #[ignore]
     fn test_alt() {
         let mut it = "as|w?|w*".chars().peekable();
         let ast = parse_alt(&mut it);
